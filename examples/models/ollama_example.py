@@ -1,25 +1,15 @@
-import asyncio
 import os
 
-from dotenv import load_dotenv
-from langchain_openai import ChatOpenAI
-from pydantic import SecretStr
+# Optional: Disable telemetry
+# os.environ["ANONYMIZED_TELEMETRY"] = "false"
 
+# Optional: Set the OLLAMA host to a remote server
+# os.environ["OLLAMA_HOST"] = "http://89.117.37.210:8080/api/chat/completions"
+
+import asyncio
 from browser_use import Agent
-
-from langchain_groq import ChatGroq
-
-
-# dotenv
-load_dotenv()
-
-api_key = os.getenv('DEEPSEEK_API_KEY', '')
-if not api_key:
-	raise ValueError('DEEPSEEK_API_KEY is not set')
-
-webui_api_key = os.getenv('WEBUI_API_KEY', '')
-if not api_key:
-	raise ValueError('WEBUI_API_KEY is not set')
+from browser_use.agent.views import AgentHistoryList
+from langchain_ollama import ChatOllama
 
 articles = {
 	'https://www.man-es.com/company/press-releases/press-details/2024/12/09/world-s-first-vlcv-methanol-retrofit-represents-blueprint-for-future-projects',
@@ -38,34 +28,29 @@ prompt = """
 """
 
 
-# https://api.groq.com/openai/v1/chat/completions
-# deepseek-r1-distill-llama-70b
-# llama-3.2-90b-vision-preview
-async def run_search():
-	agent = Agent(
-		task=prompt,
-		# llm=ChatOpenAI(
-		# 	base_url='https://api.groq.com/openai/v1/chat/completions',   
-		# 	model='deepseek-r1-distill-llama-70b',
-		# 	api_key=SecretStr(api_key),
-		# ),
-		# llm=ChatOpenAI(  #vps-webui-api
-		# 	base_url='http://89.117.37.210:8080/api/chat/completions',
-		# 	model='llama3.2:3b',
-		# 	api_key=SecretStr(webui_api_key),
-		# ),
-		llm = ChatGroq(
-			model="llama-3.2-11b-vision-preview",
-			temperature=0.0,
-			max_retries=2,
-		),
-		use_vision=False,
+async def run_search() -> AgentHistoryList:
+    agent = Agent(
+        task=prompt,
+        llm=ChatOllama(
+           	# base_url='http://89.117.37.210:8080/api/chat/completions',
+			model="llama3.2",
+            # num_ctx=32000,
+            disable_streaming=True
+        ),
+        
+        use_vision=False,
 		max_failures=2,
 		max_actions_per_step=2,
-	)
+    )
 
-	await agent.run()
+    result = await agent.run()
+    return result
 
 
-if __name__ == '__main__':
-	asyncio.run(run_search())
+async def main():
+    result = await run_search()
+    print("\n\n", result)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

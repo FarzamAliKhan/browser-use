@@ -12,7 +12,7 @@ llm = ChatOpenAI(
 	model='gpt-4o',
 	temperature=0.0,
 )
-task = 'Find the founders of browser-use and draft them a short personalized message'
+task = 'Find the founders {BASE_URL} of browser-use and draft them a short personalized message'
 
 agent = Agent(task=task, llm=llm)
 
